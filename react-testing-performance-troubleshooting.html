@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="React interview prep — Testing, Performance & Troubleshooting, explained so clearly a child could follow, with code, analogies, and interview tips.">
+<title>React Testing, Performance & Troubleshooting | Interview Hub</title>
+<style>
+:root{
+  --bg:#0B0E14;
+  --bg-panel:#101623;
+  --bg-panel-2:#151d2c;
+  --line:#232B3A;
+  --text:#E8E6E1;
+  --text-dim:#8B93A7;
+  --text-faint:#4E5A70;
+  --cyan:#61DAFB;
+  --orange:#FF9900;
+  --green:#3DDC97;
+  --red:#FF6B6B;
+  --mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans:'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  line-height:1.6;
+  overflow-x:hidden;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+}
+.wrap{max-width:880px; margin:0 auto; padding:0 24px 80px;}
+
+/* ── background atom-orbit ambient (React logo motif, subtle) ── */
+.orbit-bg{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; opacity:0.35;}
+.orbit-bg svg{position:absolute; top:-10%; right:-15%; width:640px; height:640px;}
+.orbit-ring{fill:none; stroke:var(--cyan); stroke-width:1; opacity:0.25; transform-origin:center;}
+.orbit-ring.r2{stroke:var(--cyan); transform:rotate(60deg);}
+.orbit-ring.r3{stroke:var(--cyan); transform:rotate(120deg);}
+.orbit-dot{fill:var(--cyan); opacity:0.6;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.orbit-ring{animation:spin 40s linear infinite;}
+.orbit-ring.r2{animation:spin 55s linear infinite reverse;}
+.orbit-ring.r3{animation:spin 70s linear infinite;}
+
+main{position:relative; z-index:1;}
+
+/* ── hero ── */
+.hero-intro{padding:64px 0 26px; border-bottom:1px solid var(--line); margin-bottom:20px;}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--cyan); margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+.eyebrow::before{content:''; width:8px; height:8px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); display:inline-block;}
+.page-title{font-family:var(--mono); font-size:clamp(26px,4.4vw,40px); line-height:1.15; margin:0 0 10px; color:var(--text);}
+.page-subhead{font-size:15px; color:var(--text-dim); max-width:640px; margin:0 0 22px;}
+
+/* ── progress ── */
+.progress-shell{display:flex; align-items:center; gap:14px; background:var(--bg-panel); border:1px solid var(--line); border-radius:999px; padding:10px 16px;}
+.progress-track{flex:1; height:8px; background:var(--bg-panel-2); border-radius:999px; overflow:hidden;}
+.progress-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--cyan), var(--green)); border-radius:999px; transition:width 0.4s cubic-bezier(.4,0,.2,1);}
+.progress-label{font-family:var(--mono); font-size:12.5px; color:var(--text-dim); white-space:nowrap;}
+.progress-label strong{color:var(--cyan);}
+
+/* ── phase nav pills ── */
+.phase-nav{display:flex; gap:8px; flex-wrap:wrap; margin:22px 0 8px;}
+.phase-pill{font-family:var(--mono); font-size:12px; padding:7px 14px; border-radius:999px; border:1px solid var(--line); color:var(--text-dim); text-decoration:none; transition:border-color .2s, color .2s;}
+.phase-pill.current{color:var(--bg); background:var(--cyan); border-color:var(--cyan); font-weight:600;}
+.phase-pill.locked{opacity:0.45; cursor:default;}
+.phase-pill:not(.current):not(.locked):hover{border-color:var(--cyan); color:var(--cyan);}
+
+/* ── question cards ── */
+.qlist{position:relative; margin-top:28px; padding-left:26px;}
+.qlist::before{content:''; position:absolute; left:9px; top:6px; bottom:6px; width:2px; background:linear-gradient(var(--line), var(--line));}
+.qcard{position:relative; margin-bottom:14px; background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; transition:border-color .2s;}
+.qcard::before{content:''; position:absolute; left:-26px; top:22px; width:10px; height:10px; border-radius:50%; background:var(--bg-panel-2); border:2px solid var(--text-faint); transition:background .25s, border-color .25s, box-shadow .25s;}
+.qcard.done::before{background:var(--green); border-color:var(--green); box-shadow:0 0 10px rgba(61,220,151,0.6);}
+.qcard.open{border-color:rgba(97,218,251,0.4);}
+
+.qhead{width:100%; display:flex; align-items:center; gap:14px; padding:16px 18px; background:none; border:none; cursor:pointer; text-align:left; color:var(--text); font-family:inherit;}
+.qnum{font-family:var(--mono); font-size:12px; color:var(--cyan); background:rgba(97,218,251,0.1); border:1px solid rgba(97,218,251,0.3); border-radius:6px; padding:3px 7px; flex-shrink:0;}
+.qtext{flex:1; font-size:14.5px; font-weight:600; line-height:1.45;}
+.qright{display:flex; align-items:center; gap:12px; flex-shrink:0;}
+.got-it{width:17px; height:17px; accent-color:var(--green); cursor:pointer;}
+.chev{color:var(--text-faint); font-size:13px; transition:transform .25s ease; display:inline-block;}
+.qcard.open .chev{transform:rotate(180deg); color:var(--cyan);}
+
+.qbody{display:none; padding:0 20px 20px 20px; animation:fadeIn .25s cubic-bezier(.4,0,.2,1);}
+.qcard.open .qbody{display:block;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);}}
+
+.kid-box{background:rgba(255,153,0,0.08); border:1px solid rgba(255,153,0,0.28); border-radius:10px; padding:12px 16px; margin-bottom:14px;}
+.kid-label{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--orange); font-weight:700;}
+.kid-box p{margin:6px 0 0; font-size:13.5px; color:var(--text); line-height:1.6;}
+
+.answer-list{margin:0 0 14px; padding-left:20px; display:flex; flex-direction:column; gap:8px;}
+.answer-list li{font-size:13.5px; color:var(--text-dim); line-height:1.6;}
+.answer-list li strong{color:var(--text); font-weight:600;}
+.answer-list li code{background:var(--bg-panel-2); color:var(--cyan); padding:1px 6px; border-radius:4px; font-family:var(--mono); font-size:12.5px;}
+
+.code-block{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin:0 0 14px; font-family:var(--mono); font-size:12.5px; line-height:1.65; overflow-x:auto; white-space:pre;}
+.code-block code{color:var(--text);}
+.tok-kw{color:var(--cyan); font-weight:600;}
+.tok-str{color:var(--green);}
+.tok-com{color:var(--text-faint); font-style:italic;}
+.tok-fn{color:var(--orange);}
+
+.tip-box{background:rgba(97,218,251,0.08); border:1px solid rgba(97,218,251,0.25); border-radius:10px; padding:13px 16px; font-size:13px; color:var(--text); line-height:1.6; margin-bottom:6px;}
+.tip-box strong{color:var(--cyan);}
+
+.ask-btn{display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:9px 14px; border:1px solid var(--line); border-radius:999px; background:var(--bg-panel); color:var(--text-dim); font-family:var(--mono); font-size:12px; cursor:pointer; transition:border-color .2s, color .2s;}
+.ask-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+
+/* ── footer ── */
+.foot{margin-top:48px; padding-top:22px; border-top:1px solid var(--line); font-size:12px; color:var(--text-faint); font-family:var(--mono); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+.footnav{display:flex; justify-content:space-between; gap:12px; margin-top:16px;}
+.footnav a{flex:1; display:block; text-decoration:none; color:var(--text); background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:14px 18px; font-family:var(--mono); font-size:13px; transition:border-color .2s;}
+.footnav a:hover{border-color:var(--cyan);}
+.footnav a.next{text-align:right;}
+.footnav .nav-label{display:block; font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;}
+.footnav .nav-spacer{flex:1;}
+
+/* ── controls row ── */
+.controls{display:flex; gap:10px; margin:18px 0 4px; flex-wrap:wrap;}
+.ctrl-btn{font-family:var(--mono); font-size:12px; padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--bg-panel); color:var(--text-dim); cursor:pointer; transition:border-color .2s, color .2s;}
+.ctrl-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+
+@media (max-width:560px){
+  .qtext{font-size:13.5px;}
+  .hero-intro{padding:44px 0 20px;}
+}
+</style>
+</head>
+<body>
+<div class="orbit-bg">
+  <svg viewBox="0 0 640 640" aria-hidden="true">
+    <ellipse class="orbit-ring" cx="320" cy="320" rx="260" ry="100"></ellipse>
+    <ellipse class="orbit-ring r2" cx="320" cy="320" rx="260" ry="100"></ellipse>
+    <ellipse class="orbit-ring r3" cx="320" cy="320" rx="260" ry="100"></ellipse>
+    <circle class="orbit-dot" cx="320" cy="320" r="10"></circle>
+  </svg>
+</div>
+
+<main class="wrap">
+  <header class="hero-intro">
+    <div class="eyebrow">react interview prep &bull; phase 5 of 5</div>
+    <h1 class="page-title">Testing, Performance &amp; Troubleshooting</h1>
+    <p class="page-subhead">How to actually measure, test, and fix a real React app &mdash; the 20 questions that show up once the conversation turns from theory to production.</p>
+
+    <div class="progress-shell">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label"><strong id="progressCount">0</strong>/20 learned</div>
+    </div>
+
+    <div class="phase-nav">
+      <a class="phase-pill" href="react-core-fundamentals.html">01 Core Fundamentals</a>
+      <a class="phase-pill" href="react-hooks-deep-dive.html">02 Hooks Deep-Dive</a>
+      <a class="phase-pill" href="react-state-management-data.html">03 State Management & Data</a>
+      <a class="phase-pill" href="react-advanced-architecture-react19.html">04 Advanced Architecture & React 19</a>
+      <span class="phase-pill current">05 Testing, Performance & Troubleshooting</span>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn" onclick="expandAll()">Expand all</button>
+      <button class="ctrl-btn" onclick="collapseAll()">Collapse all</button>
+      <button class="ctrl-btn" onclick="selectAll()">Select all</button>
+      <button class="ctrl-btn" onclick="resetProgress()">Reset progress</button>
+    </div>
+  </header>
+
+  <div class="qlist" id="qlist">
+    
+<article class="qcard" id="q1">
+  <button class="qhead" onclick="toggleCard(1)" aria-expanded="false" aria-controls="body1">
+    <span class="qnum">01</span>
+    <span class="qtext">How do you measure performance using the React Profiler?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk1" onclick="event.stopPropagation(); toggleGotIt(1)" aria-label="Mark question 1 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body1">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>It's like a stopwatch and a notebook that quietly follows every actor on stage, writing down exactly how long each one took to get ready and why they had to redo their makeup.</p></div>
+    <ul class="answer-list"><li>The <strong>Profiler tab</strong> in React DevTools records a session (interactions, navigations) and shows a <strong>flamegraph</strong> of every component that rendered, how long each took, and how often.</li><li>Toggling <strong>"Record why each component rendered"</strong> shows the exact reason (props changed, state changed, parent re-rendered, context changed, hooks changed) &mdash; the fastest way to find unnecessary re-renders.</li><li>The <code>&lt;Profiler id="App" onRender={callback}&gt;</code> component API lets you programmatically capture render timings in code (actual vs base duration, phase: mount/update) &mdash; useful for automated performance regression checks, not just manual DevTools sessions.</li><li>Always profile a <strong>production build</strong> for real numbers &mdash; development builds include extra checks/warnings that make everything measurably slower than what users actually experience.</li></ul>
+    <pre class="code-block"><code>&lt;Profiler id=&quot;Sidebar&quot; onRender={(id, phase, actualDuration) =&gt; {
+  console.log({ id, phase, actualDuration });
+}}&gt;
+  &lt;Sidebar /&gt;
+&lt;/Profiler&gt;</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Mentioning "record why each component rendered" specifically is the detail that proves hands-on DevTools usage rather than just knowing the tool exists.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you measure performance using the React Profiler?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q2">
+  <button class="qhead" onclick="toggleCard(2)" aria-expanded="false" aria-controls="body2">
+    <span class="qnum">02</span>
+    <span class="qtext">You have a Memory Leak in a React component. How do you find and fix it?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk2" onclick="event.stopPropagation(); toggleGotIt(2)" aria-label="Mark question 2 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body2">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>If you forget to hang up the phone after a call ends, you keep paying for a call that isn't actually happening anymore. A memory leak is React "forgetting to hang up" on something after a component is gone.</p></div>
+    <ul class="answer-list"><li>Most React memory leaks come from a <strong>subscription, timer, or listener set up in an effect without a cleanup function</strong> &mdash; the classic warning is "Can't perform a React state update on an unmounted component."</li><li><strong>Diagnose</strong> using the browser's Memory tab: take heap snapshots before and after mounting/unmounting the suspect component repeatedly, and look for detached DOM nodes or growing retained object counts that should have been garbage collected.</li><li><strong>Fix</strong>: always return a cleanup function from <code>useEffect</code> that removes event listeners, clears <code>setInterval</code>/<code>setTimeout</code>, unsubscribes from external stores/sockets, and aborts in-flight fetches.</li><li>Also watch for <strong>closures capturing stale large objects</strong> unintentionally (e.g. a long-lived event listener referencing an old, huge state object) &mdash; even without a literal timer/subscription, this can keep memory pinned longer than expected.</li></ul>
+    <pre class="code-block"><code>useEffect(() =&gt; {
+  const socket = new WebSocket(url);
+  socket.onmessage = handleMessage;
+  return () =&gt; socket.close(); // prevents the leak
+}, [url]);</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Describe the actual DevTools diagnostic workflow (heap snapshots, detached nodes) — interviewers want to see you can find a leak, not just recite the fix.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: You have a Memory Leak in a React component. How do you find and fix it?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q3">
+  <button class="qhead" onclick="toggleCard(3)" aria-expanded="false" aria-controls="body3">
+    <span class="qnum">03</span>
+    <span class="qtext">How do you optimize rendering a very large list (Virtualization)?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk3" onclick="event.stopPropagation(); toggleGotIt(3)" aria-label="Mark question 3 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body3">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>A train with 10,000 seats doesn't need windows built for every single seat visible at once from outside — you only need to actually build (render) the small number of seats currently visible through the windows.</p></div>
+    <ul class="answer-list"><li><strong>Virtualization</strong> (a.k.a. windowing) renders only the items currently <strong>visible in the viewport</strong> (plus a small buffer), instead of mounting DOM nodes for every single item in a huge list &mdash; dramatically reducing DOM node count and render/layout cost.</li><li>Libraries like <strong>react-window</strong> or <strong>TanStack Virtual</strong> handle the math of calculating which items are visible based on scroll position and item size, recycling a small pool of DOM nodes as the user scrolls.</li><li>For lists with <strong>variable row heights</strong>, use the variable-size variants these libraries provide, which measure or estimate each row's height rather than assuming a fixed size.</li><li>Combine with <code>React.memo</code> on the row component itself, so scrolling (which changes which rows are mounted) doesn't also cause unrelated re-renders of rows that are simply being repositioned.</li></ul>
+    <pre class="code-block"><code>import { FixedSizeList } from &#x27;react-window&#x27;;
+
+&lt;FixedSizeList height={600} itemCount={10000} itemSize={40} width=&quot;100%&quot;&gt;
+  {({ index, style }) =&gt; &lt;div style={style}&gt;Row {index}&lt;/div&gt;}
+&lt;/FixedSizeList&gt;</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Name react-window or TanStack Virtual specifically — a vague "use virtualization" answer without naming a real tool reads as textbook knowledge only.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you optimize rendering a very large list (Virtualization)?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q4">
+  <button class="qhead" onclick="toggleCard(4)" aria-expanded="false" aria-controls="body4">
+    <span class="qnum">04</span>
+    <span class="qtext">What is the difference between TDD and BDD, and how does it apply to React?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk4" onclick="event.stopPropagation(); toggleGotIt(4)" aria-label="Mark question 4 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body4">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>TDD is like writing the exact ruler markings before you cut the wood, so you build to a precise, testable spec from the very start. BDD is more like writing the story of how the customer will use the finished chair, in plain language everyone (even non-carpenters) can understand.</p></div>
+    <ul class="answer-list"><li><strong>TDD (Test-Driven Development)</strong>: write a failing test first, write the minimum code to make it pass, then refactor &mdash; a tight, code-first, developer-focused cycle.</li><li><strong>BDD (Behavior-Driven Development)</strong>: describe expected behavior in <strong>plain, readable language</strong> close to business requirements (often Given/When/Then), aimed at being understandable by non-developers (product, QA) as well.</li><li>In React specifically, TDD often means writing a <strong>React Testing Library</strong> test for a component's behavior before implementing it; BDD often layers a tool like <strong>Cucumber</strong> or descriptive <code>describe</code>/<code>it</code> blocks written in very plain, user-facing language on top of the same underlying tests.</li><li>They aren't mutually exclusive &mdash; many teams write BDD-style, human-readable test descriptions while still following a TDD-style red/green/refactor development loop underneath.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> Clarify they solve different problems (development workflow vs. communication/readability) rather than presenting them as competing alternatives — that nuance is often missed.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is the difference between TDD and BDD, and how does it apply to React?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q5">
+  <button class="qhead" onclick="toggleCard(5)" aria-expanded="false" aria-controls="body5">
+    <span class="qnum">05</span>
+    <span class="qtext">What is React Testing Library (RTL), and what&#x27;s its core philosophy?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk5" onclick="event.stopPropagation(); toggleGotIt(5)" aria-label="Mark question 5 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body5">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>RTL tests your app the way a real visitor would use it — by looking at the screen and clicking buttons — rather than peeking behind the curtain at exactly how the machinery inside works.</p></div>
+    <ul class="answer-list"><li>React Testing Library's guiding philosophy: <strong>"the more your tests resemble the way your software is used, the more confidence they can give you."</strong></li><li>It encourages querying the DOM the way a <strong>real user</strong> would find things &mdash; by visible text, label, or accessible role (<code>getByRole</code>, <code>getByLabelText</code>, <code>getByText</code>) &mdash; rather than by internal implementation details like component instance state or CSS class names.</li><li>It deliberately makes it <strong>hard to test implementation details</strong> (no direct access to a component's internal state or private methods) &mdash; on purpose, so tests don't break when you refactor internals without changing user-facing behavior.</li><li>Pairs naturally with <strong>Jest</strong> or <strong>Vitest</strong> as the test runner/assertion library; RTL itself only provides the rendering and querying utilities, not the test runner.</li></ul>
+    <pre class="code-block"><code>test(&#x27;shows greeting after clicking button&#x27;, async () =&gt; {
+  render(&lt;Greeter /&gt;);
+  await userEvent.click(screen.getByRole(&#x27;button&#x27;, { name: /say hi/i }));
+  expect(screen.getByText(&#x27;Hello!&#x27;)).toBeInTheDocument();
+});</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Quote the philosophy directly if asked — "tests should resemble how users use the software" is RTL's actual, well-known mission statement, and interviewers often check for it specifically.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is React Testing Library (RTL), and what&#x27;s its core philosophy?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q6">
+  <button class="qhead" onclick="toggleCard(6)" aria-expanded="false" aria-controls="body6">
+    <span class="qnum">06</span>
+    <span class="qtext">What&#x27;s the difference between fireEvent and userEvent in tests?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk6" onclick="event.stopPropagation(); toggleGotIt(6)" aria-label="Mark question 6 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body6">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>fireEvent is like poking a doll's arm directly to make it move. userEvent is like actually acting out a real person walking up, clicking, and interacting the way an actual visitor would, with all the natural in-between steps included.</p></div>
+    <ul class="answer-list"><li><code>fireEvent</code> (from React Testing Library core) dispatches a <strong>single, low-level DOM event</strong> exactly as specified &mdash; e.g. <code>fireEvent.click(button)</code> fires just a click event, nothing more.</li><li><code>userEvent</code> (a companion library) simulates a <strong>full, realistic sequence of events</strong> a real user interaction would actually produce &mdash; e.g. clicking a checkbox also fires <code>pointerdown</code>, <code>mousedown</code>, focus events, etc., in the correct order.</li><li>For <strong>typing</strong> specifically, <code>userEvent.type()</code> fires individual keydown/keypress/input events per character, correctly triggering React's controlled-input update cycle character by character &mdash; <code>fireEvent.change()</code> just sets the whole value at once, which can hide bugs that only appear with real, incremental typing.</li><li>Current guidance/best practice: prefer <code>userEvent</code> for anything simulating real user interaction; reserve <code>fireEvent</code> for the rare cases needing a very specific, single low-level event userEvent doesn't expose.</li></ul>
+    <pre class="code-block"><code>// fireEvent — sets the value directly, one event
+fireEvent.change(input, { target: { value: &#x27;hi&#x27; } });
+
+// userEvent — simulates real keystrokes, one at a time
+await userEvent.type(input, &#x27;hi&#x27;);</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> The concrete example of userEvent.type() catching bugs that fireEvent.change() would miss is the strongest, most memorable way to answer this.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What&#x27;s the difference between fireEvent and userEvent in tests?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q7">
+  <button class="qhead" onclick="toggleCard(7)" aria-expanded="false" aria-controls="body7">
+    <span class="qnum">07</span>
+    <span class="qtext">How do you test a component that uses a custom Hook?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk7" onclick="event.stopPropagation(); toggleGotIt(7)" aria-label="Mark question 7 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body7">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>You don't need to open up the toy and test the tiny motor inside all by itself — you press the button on the outside and check that the toy does what it's supposed to do.</p></div>
+    <ul class="answer-list"><li><strong>Preferred approach</strong>: test the <strong>component itself</strong> through its rendered output and user interactions (React Testing Library) &mdash; the Hook is an implementation detail, and testing through the component's actual behavior gives more confidence and survives refactors better.</li><li>If the Hook contains genuinely complex, standalone logic worth testing in isolation, use <code>renderHook()</code> from <code>@testing-library/react</code>, which mounts the Hook inside a minimal test harness component and exposes its return value via <code>result.current</code>.</li><li>Async state updates inside a Hook test need to be wrapped in <code>act()</code> (often handled automatically by <code>renderHook</code>'s <code>waitFor</code>/async utilities) so React processes the update before assertions run.</li><li>Avoid mocking a custom Hook's internals just to test a component &mdash; if you find yourself needing to, it's often a sign the component and Hook should be tested together instead, through the actual rendered UI.</li></ul>
+    <pre class="code-block"><code>const { result } = renderHook(() =&gt; useCounter());
+act(() =&gt; { result.current.increment(); });
+expect(result.current.count).toBe(1);</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Lead with "test through the component when possible" — jumping straight to renderHook as the default answer misses RTL's actual guiding philosophy.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you test a component that uses a custom Hook?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q8">
+  <button class="qhead" onclick="toggleCard(8)" aria-expanded="false" aria-controls="body8">
+    <span class="qnum">08</span>
+    <span class="qtext">Vitest vs. Jest — what&#x27;s the difference and which would you pick today?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk8" onclick="event.stopPropagation(); toggleGotIt(8)" aria-label="Mark question 8 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body8">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Jest is the reliable old family car everyone's used for years. Vitest is a newer, lighter car built specifically to work perfectly with the newer style of roads (Vite) most projects drive on today.</p></div>
+    <ul class="answer-list"><li><strong>Jest</strong> is the long-established, mature test runner &mdash; huge ecosystem, wide adoption, and works with any bundler setup via its own transform pipeline (usually Babel).</li><li><strong>Vitest</strong> is built directly on top of <strong>Vite</strong>, reusing the same fast dev-server transform pipeline and config &mdash; meaning near-instant test startup and hot-reloading of tests, and near-zero extra config for projects already using Vite.</li><li>Vitest offers a <strong>Jest-compatible API</strong> (<code>describe</code>, <code>it</code>, <code>expect</code>) so migrating existing Jest tests is usually straightforward, often just a matter of swapping the import source.</li><li>General guidance today: for a <strong>new Vite-based project</strong>, Vitest is the natural, faster-feeling choice; for an existing large Jest codebase (or one using Webpack/Next.js's own Jest integration), staying on Jest is usually the pragmatic call unless there's a strong reason to migrate.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> Frame the decision around the existing build tool (Vite vs. something else) rather than declaring one universally "better" — that's the actual real-world decision criterion.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: Vitest vs. Jest — what&#x27;s the difference and which would you pick today?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q9">
+  <button class="qhead" onclick="toggleCard(9)" aria-expanded="false" aria-controls="body9">
+    <span class="qnum">09</span>
+    <span class="qtext">How do you mock API calls in tests using MSW (Mock Service Worker)?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk9" onclick="event.stopPropagation(); toggleGotIt(9)" aria-label="Mark question 9 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body9">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Instead of taping a fake answer directly onto your phone (mocking the fetch function itself), MSW is like intercepting the actual phone call at the network level and answering it convincingly as if it were the real person on the other end.</p></div>
+    <ul class="answer-list"><li><strong>MSW</strong> intercepts actual network requests at the <strong>network layer</strong> (using a Service Worker in the browser, or request interception in Node for tests) &mdash; your application code makes a real <code>fetch</code>/<code>axios</code> call exactly as it would in production, unaware it's being mocked.</li><li>This is more realistic than mocking <code>fetch</code> or a data-fetching module directly, since it tests the actual request-making code path (headers, URL construction, error handling) rather than replacing it entirely.</li><li>You define <strong>handlers</strong> per endpoint (<code>http.get('/api/user', () => HttpResponse.json({...}))</code>), and the same handlers can be reused across unit tests, integration tests, and even local development/Storybook &mdash; one mock definition, many uses.</li><li>Because the mocking happens at the network boundary, the exact same test setup works regardless of which data-fetching library the app uses underneath (plain fetch, axios, React Query) &mdash; you're not tied to mocking a specific library's API.</li></ul>
+    <pre class="code-block"><code>export const handlers = [
+  http.get(&#x27;/api/user&#x27;, () =&gt; HttpResponse.json({ name: &#x27;Ana&#x27; })),
+];
+
+// test setup
+const server = setupServer(...handlers);
+beforeAll(() =&gt; server.listen());
+afterEach(() =&gt; server.resetHandlers());
+afterAll(() =&gt; server.close());</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Mentioning that the same handlers can be reused for tests AND local dev/Storybook is the detail that shows real production usage, not just textbook test setup.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you mock API calls in tests using MSW (Mock Service Worker)?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q10">
+  <button class="qhead" onclick="toggleCard(10)" aria-expanded="false" aria-controls="body10">
+    <span class="qnum">10</span>
+    <span class="qtext">What is E2E (End-to-End) Testing, and how do Playwright/Cypress fit in?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk10" onclick="event.stopPropagation(); toggleGotIt(10)" aria-label="Mark question 10 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body10">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Unit tests check that one single gear in a car works correctly on its own. E2E testing is actually starting the whole car, driving it out of the garage, and checking that the entire trip goes as expected, start to finish.</p></div>
+    <ul class="answer-list"><li><strong>E2E testing</strong> runs the full, real application (usually in an actual or headless browser) and simulates a genuine user journey across multiple pages/flows &mdash; e.g. logging in, adding an item to a cart, and completing checkout &mdash; verifying the whole system (frontend, backend, database) works together correctly.</li><li><strong>Cypress</strong> and <strong>Playwright</strong> are the two dominant modern tools: both drive real browsers, auto-wait for elements (reducing flaky "element not found yet" failures), and provide rich debugging (screenshots, videos, trace viewers on failure).</li><li><strong>Playwright</strong> supports multiple browser engines (Chromium, Firefox, WebKit) natively and can run true multi-tab/multi-origin scenarios; <strong>Cypress</strong> has historically had a friendlier local dev experience and a large plugin ecosystem, though it's closed a lot of the gap with newer versions.</li><li>E2E tests are the <strong>slowest and most expensive</strong> layer of the testing pyramid &mdash; used sparingly for critical user journeys, while unit/integration tests (RTL, Vitest/Jest) cover the bulk of day-to-day logic verification faster and more cheaply.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> Reference the testing pyramid explicitly (few E2E tests, more integration tests, most unit tests) — it shows you understand test strategy, not just tool names.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is E2E (End-to-End) Testing, and how do Playwright/Cypress fit in?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q11">
+  <button class="qhead" onclick="toggleCard(11)" aria-expanded="false" aria-controls="body11">
+    <span class="qnum">11</span>
+    <span class="qtext">SCENARIO: Your app is re-rendering way too much and feels sluggish. Walk through your debugging process.</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk11" onclick="event.stopPropagation(); toggleGotIt(11)" aria-label="Mark question 11 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body11">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>It's like your whole house's lights flickering every time anyone anywhere flips any switch — first you'd want to find out which specific switch is triggering all the others, instead of just guessing and rewiring randomly.</p></div>
+    <ul class="answer-list"><li><strong>1. Measure first</strong> &mdash; open React DevTools Profiler, record an interaction, and use "record why each component rendered" to see exactly which components re-rendered and why (props/state/context/parent re-render), instead of guessing.</li><li><strong>2. Find the trigger</strong> &mdash; often it's state living too high up the tree (causing a huge subtree to re-render on every keystroke), or a Context value changing frequently and re-rendering every consumer.</li><li><strong>3. Apply the targeted fix</strong> &mdash; move state down closer to where it's used, split a large Context into smaller ones, wrap expensive leaf components in <code>React.memo</code> with stable (memoized) props via <code>useMemo</code>/<code>useCallback</code>, or move state entirely out of React (e.g. into a ref or an external store) if it truly doesn't need to trigger renders.</li><li><strong>4. Re-measure</strong> &mdash; confirm the fix actually reduced renders in the Profiler rather than just assuming it worked; premature or misapplied memoization can sometimes add overhead without helping.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> Structuring the answer as an explicit numbered process (measure → find trigger → fix → re-measure) reads far stronger in an interview than jumping straight to "just add useMemo everywhere."</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: SCENARIO: Your app is re-rendering way too much and feels sluggish. Walk through your debugging process.')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q12">
+  <button class="qhead" onclick="toggleCard(12)" aria-expanded="false" aria-controls="body12">
+    <span class="qnum">12</span>
+    <span class="qtext">SCENARIO: You need to integrate a third-party library that directly manipulates the DOM (e.g. a charting or map library). How do you do it safely in React?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk12" onclick="event.stopPropagation(); toggleGotIt(12)" aria-label="Mark question 12 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body12">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>It's like inviting a guest into your house who has their own way of rearranging furniture — you give them one clearly marked room to redecorate however they like, and you promise not to also rearrange that same room yourself at the same time.</p></div>
+    <ul class="answer-list"><li>Give the library a <strong>dedicated container element</strong> via a <code>ref</code>, and let it mount/manage everything <em>inside</em> that container imperatively &mdash; never let React re-render/manage the DOM nodes the library itself controls, or the two will fight over the same DOM and cause errors or visual glitches.</li><li>Initialize the library inside a <code>useEffect</code> (after the ref's DOM node exists), and <strong>always destroy/cleanup</strong> the library instance in the effect's cleanup function to avoid leaks and duplicate instances on re-renders.</li><li>When the library needs to react to prop changes (e.g. new chart data), call the library's own <strong>update/set-data method imperatively</strong> inside a second effect keyed on those props, rather than trying to re-render React's JSX into the library's DOM.</li><li>Wrap this pattern once in a small, reusable adapter component so the rest of the app can treat the third-party library as if it were a normal, declarative React component from the outside.</li></ul>
+    <pre class="code-block"><code>function ChartWrapper({ data }) {
+  const containerRef = useRef(null);
+  const chartRef = useRef(null);
+
+  useEffect(() =&gt; {
+    chartRef.current = new ThirdPartyChart(containerRef.current);
+    return () =&gt; chartRef.current.destroy(); // cleanup
+  }, []);
+
+  useEffect(() =&gt; {
+    chartRef.current?.updateData(data); // imperative update, not a re-render
+  }, [data]);
+
+  return &lt;div ref={containerRef} /&gt;;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> The core principle to state clearly: give the library sole ownership of its container's DOM — React and the library must never both try to manage the exact same nodes.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: SCENARIO: You need to integrate a third-party library that directly manipulates the DOM (e.g. a charting or map library). How do you do it safely in React?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q13">
+  <button class="qhead" onclick="toggleCard(13)" aria-expanded="false" aria-controls="body13">
+    <span class="qnum">13</span>
+    <span class="qtext">SCENARIO: How do you implement efficient Theme Switching (light/dark mode) across a large app?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk13" onclick="event.stopPropagation(); toggleGotIt(13)" aria-label="Mark question 13 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body13">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Instead of repainting every single wall in a giant house one by one whenever you want a new color scheme, you just flip one master switch connected to the whole house's wiring, and every room updates instantly together.</p></div>
+    <ul class="answer-list"><li>Use <strong>CSS variables</strong> (custom properties) for all themeable values (colors, borders), defined once, and simply swap the variable values at the root (e.g. by toggling a class or <code>data-theme</code> attribute on <code>&lt;html&gt;</code>) &mdash; this avoids re-rendering any React components at all, since it's a pure CSS-level change.</li><li>Keep the <strong>current theme choice</strong> itself in a small Context (or a tiny global store), read only by the toggle control and anything that needs to know the theme programmatically (e.g. picking a chart color scheme in JS) &mdash; not by every single styled component.</li><li>Persist the choice in <code>localStorage</code>, and to avoid a "flash of wrong theme" on load, read the stored preference and apply the CSS class/attribute as early as possible &mdash; ideally via a small inline script in the HTML head, before React even mounts, rather than waiting for a <code>useEffect</code>.</li><li>Avoid re-rendering the whole component tree on every theme toggle &mdash; since the actual color swap lives in CSS variables, only components that read the theme value directly in JS logic need to re-render at all.</li></ul>
+    <pre class="code-block"><code>/* CSS: swap variables at the root */
+:root[data-theme=&#x27;dark&#x27;] { --bg: #0B0E14; --text: #E8E6E1; }
+:root[data-theme=&#x27;light&#x27;] { --bg: #ffffff; --text: #111111; }
+
+// Toggle just flips the attribute — no React re-render needed for the visual change
+document.documentElement.setAttribute(&#x27;data-theme&#x27;, &#x27;dark&#x27;);</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> The flash-of-wrong-theme-on-load fix (inline script before hydration) is a real production detail most candidates miss — bring it up unprompted.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: SCENARIO: How do you implement efficient Theme Switching (light/dark mode) across a large app?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q14">
+  <button class="qhead" onclick="toggleCard(14)" aria-expanded="false" aria-controls="body14">
+    <span class="qnum">14</span>
+    <span class="qtext">SCENARIO: How do you protect routes and redirect unauthenticated users at the routing level?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk14" onclick="event.stopPropagation(); toggleGotIt(14)" aria-label="Mark question 14 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body14">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>It's like a bouncer standing at the door of a members-only room, checking your card before you're even allowed to step inside — rather than letting you walk all the way in and then awkwardly escorting you back out.</p></div>
+    <ul class="answer-list"><li>Build a <strong>guard/wrapper component</strong> (e.g. <code>&lt;ProtectedRoute&gt;</code>) that checks authentication state and either renders the intended route's children, or redirects to a login page &mdash; commonly using the router's <code>&lt;Navigate&gt;</code>/<code>redirect()</code> mechanism.</li><li>Handle the <strong>"still checking auth"</strong> state explicitly (e.g. verifying a token on load) &mdash; show a loading state rather than either flashing protected content briefly or redirecting prematurely before the check completes.</li><li>In modern meta-frameworks (Next.js middleware, Remix loaders), this check can happen <strong>at the server/routing layer before any component even renders</strong> &mdash; more secure and avoids any client-side flash of protected content entirely, versus checking only after the client has already rendered.</li><li>After a successful login redirect, preserve the originally-requested URL (e.g. as a query param) so the user lands back where they intended to go, not just a generic home page.</li></ul>
+    <pre class="code-block"><code>function ProtectedRoute({ children }) {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return &lt;Spinner /&gt;;
+  if (!user) return &lt;Navigate to=&quot;/login&quot; replace /&gt;;
+  return children;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Mention server/middleware-level checks as the more secure modern alternative to client-only guards — a client-only guard can still flash protected content before redirecting.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: SCENARIO: How do you protect routes and redirect unauthenticated users at the routing level?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q15">
+  <button class="qhead" onclick="toggleCard(15)" aria-expanded="false" aria-controls="body15">
+    <span class="qnum">15</span>
+    <span class="qtext">What is Concurrent Rendering in React 18+?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk15" onclick="event.stopPropagation(); toggleGotIt(15)" aria-label="Mark question 15 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body15">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Imagine a chef who can pause chopping vegetables the instant the doorbell rings, answer the door, and then come right back to exactly where they left off chopping — instead of being forced to finish the entire dish first no matter what.</p></div>
+    <ul class="answer-list"><li><strong>Concurrent Rendering</strong> lets React <strong>prepare multiple versions of the UI at once</strong> and <strong>interrupt</strong> a lower-priority render in progress if something more urgent (like a keystroke) comes in &mdash; rendering is no longer a single, uninterruptible block of work.</li><li>It's enabled simply by using <code>createRoot()</code> (React 18's new root API) instead of the legacy <code>ReactDOM.render()</code> &mdash; concurrent features aren't automatic beyond that; you opt into the actual behaviors via APIs like <code>useTransition</code> and <code>useDeferredValue</code>.</li><li>This is what powers features like <strong>Suspense for data fetching</strong>, <code>useTransition</code>, and <code>useDeferredValue</code> &mdash; all of them rely on React being able to pause, throw away, or prioritize renders rather than committing every render synchronously and immediately.</li><li>Crucially, it doesn't change <em>what</em> gets rendered, only <em>when and how it's scheduled</em> &mdash; the same component output is eventually produced, just with better responsiveness to more urgent user interactions along the way.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> Clarify explicitly that concurrency is about scheduling/interruptibility, not multi-threading — React is still single-threaded JavaScript; it's cooperative interruption, not true parallelism.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is Concurrent Rendering in React 18+?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q16">
+  <button class="qhead" onclick="toggleCard(16)" aria-expanded="false" aria-controls="body16">
+    <span class="qnum">16</span>
+    <span class="qtext">SCENARIO: Should you deploy this app as a client-rendered SPA or with SSR? How do you decide?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk16" onclick="event.stopPropagation(); toggleGotIt(16)" aria-label="Mark question 16 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body16">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>If you're opening a small private clubhouse just for your friends, a simple sign works fine (SPA). If you want strangers walking by on the street to instantly understand what's inside and want to visit (SEO, fast first impression), you need a proper storefront window (SSR) they can see without even walking in.</p></div>
+    <ul class="answer-list"><li>Choose <strong>SSR</strong> (or Server Components) when: SEO matters (public content, marketing/e-commerce pages that need to be indexed and previewed well), fast <strong>first paint</strong> for varied network/device conditions matters, or the app benefits from moving heavy logic/dependencies to the server.</li><li>Choose a <strong>client-rendered SPA</strong> when: the app is behind a login wall (little SEO benefit), is highly interactive/app-like (a dashboard, an internal tool, a design tool), and users are expected to stay in the app for a long single session where the extra SSR infrastructure cost isn't worth it.</li><li>Many real apps land in between: <strong>SSR for the marketing/public pages</strong>, SPA-like behavior once logged into the actual app &mdash; frameworks like Next.js/Remix support exactly this mixed approach per-route rather than an app-wide, all-or-nothing choice.</li><li>Also weigh <strong>infrastructure cost and complexity</strong> honestly &mdash; SSR requires a running server (or edge functions) instead of static file hosting, which is a real operational trade-off, not just a technical one.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> A senior-level answer explicitly weighs the decision against concrete factors (SEO, auth-gating, infra cost) rather than declaring one approach universally superior — that's what interviewers are actually listening for.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: SCENARIO: Should you deploy this app as a client-rendered SPA or with SSR? How do you decide?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q17">
+  <button class="qhead" onclick="toggleCard(17)" aria-expanded="false" aria-controls="body17">
+    <span class="qnum">17</span>
+    <span class="qtext">What are the Best Practices for Folder Structure in a large React app?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk17" onclick="event.stopPropagation(); toggleGotIt(17)" aria-label="Mark question 17 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body17">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>A messy toy box where everything's dumped in one pile makes finding anything a nightmare. A good folder structure is like labeled bins — you instantly know which bin has the blocks and which has the crayons.</p></div>
+    <ul class="answer-list"><li><strong>Feature-based (a.k.a. "colocation") structure</strong> is the widely preferred modern approach over strictly type-based folders (one giant <code>components/</code>, one giant <code>hooks/</code>) &mdash; group everything related to one feature (its components, hooks, tests, styles, types) together in one folder, so related code lives near each other and unrelated features stay decoupled.</li><li>Keep a small <strong>shared/</strong> or <code>common/</code> directory for genuinely reusable, feature-agnostic pieces (a design system's Button, a generic <code>useDebounce</code> hook) &mdash; and resist the urge to put feature-specific code there just because it "might" be reused someday.</li><li>Co-locate <strong>tests next to the code they test</strong> (<code>Button.tsx</code> + <code>Button.test.tsx</code> in the same folder) rather than a separate mirrored test tree &mdash; makes it obvious when code changes without a corresponding test update.</li><li>Meta-frameworks with file-based routing (Next.js App Router) impose some structure by convention already (routes = folders) &mdash; within that, still apply feature-based colocation for the non-routing-related code inside each route segment.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> Naming the trade-off explicitly — feature-based colocation over strict type-based folders — is the specific, memorable answer interviewers are listening for.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What are the Best Practices for Folder Structure in a large React app?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q18">
+  <button class="qhead" onclick="toggleCard(18)" aria-expanded="false" aria-controls="body18">
+    <span class="qnum">18</span>
+    <span class="qtext">How do you handle Environment Variables securely in a React app?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk18" onclick="event.stopPropagation(); toggleGotIt(18)" aria-label="Mark question 18 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body18">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>A public bulletin board (client-side env vars) is fine for announcements everyone should see. But you'd never pin your house key to that same public board — secrets need to stay in a locked drawer only the server can open.</p></div>
+    <ul class="answer-list"><li>Anything bundled into a <strong>client-side</strong> React build (variables prefixed <code>NEXT_PUBLIC_</code>, <code>VITE_</code>, <code>REACT_APP_</code> depending on the tool) ends up <strong>fully visible in the shipped JavaScript</strong> &mdash; readable by anyone who opens DevTools, no matter how it's named or "hidden."</li><li><strong>Never</strong> put real secrets (API keys with write access, database credentials, private tokens) in client-exposed env variables &mdash; only genuinely public configuration (a public API base URL, a publishable Stripe key meant to be public) belongs there.</li><li>True secrets belong <strong>server-side only</strong> &mdash; in a Server Component, a Server Action, an API route, or a separate backend &mdash; where the client never receives the raw value, only the results of using it.</li><li>Keep <code>.env</code> files out of version control (<code>.gitignore</code>), use different values per environment (dev/staging/prod), and rotate any secret immediately if it's ever accidentally committed or exposed client-side.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> The clearest way to state it: if a variable is prefixed for client exposure, treat it as fully public information the instant you write it — never assume any client-side env var is hidden.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you handle Environment Variables securely in a React app?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q19">
+  <button class="qhead" onclick="toggleCard(19)" aria-expanded="false" aria-controls="body19">
+    <span class="qnum">19</span>
+    <span class="qtext">Where is React headed — what should you know about its direction in 2026 and beyond?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk19" onclick="event.stopPropagation(); toggleGotIt(19)" aria-label="Mark question 19 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body19">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Think of it like a road trip that's shifting from everyone driving their own separate car and meeting at the destination (client-only logic) toward a shared, well-organized bus system that already knows the fastest route (more done automatically, more done on the server).</p></div>
+    <ul class="answer-list"><li>Continued push toward the <strong>React Compiler</strong> becoming standard, shifting manual memoization (<code>useMemo</code>/<code>useCallback</code>/<code>React.memo</code>) from a developer responsibility to an automatic, compiler-inferred optimization.</li><li>Deeper adoption of <strong>Server Components and Server Actions</strong> as the default architecture in meta-frameworks, blurring the line between "frontend" and "backend" work for typical CRUD-style features.</li><li>Growing use of <strong>Concurrent React features</strong> (<code>useTransition</code>, <code>useDeferredValue</code>, streaming Suspense) as standard practice for responsiveness, rather than advanced/rarely-used APIs.</li><li>As always with a fast-moving ecosystem: the safest interview answer is to describe the <em>direction of travel</em> (automatic optimization, more server-driven architecture, better built-in async/streaming primitives) rather than asserting specific unreleased features as certain &mdash; and to note that verifying the latest official React blog/docs before making concrete architectural claims is good practice given how quickly this area evolves.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> It's fine, and honest, to caveat fast-moving predictions in an interview — showing you know how to verify claims against current docs is itself a signal of good engineering judgment.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: Where is React headed — what should you know about its direction in 2026 and beyond?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q20">
+  <button class="qhead" onclick="toggleCard(20)" aria-expanded="false" aria-controls="body20">
+    <span class="qnum">20</span>
+    <span class="qtext">FINAL BOSS: How would you build a tiny custom React-like renderer from scratch?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk20" onclick="event.stopPropagation(); toggleGotIt(20)" aria-label="Mark question 20 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body20">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>It's like being asked to build your own simplified version of LEGO's snap-together system from raw plastic — to prove you actually understand why the real bricks click together the way they do.</p></div>
+    <ul class="answer-list"><li><strong>1. Element creation</strong>: a <code>createElement(type, props, ...children)</code> function that returns a plain object <code>{ type, props: { ...props, children } }</code> &mdash; the same idea JSX compiles down to.</li><li><strong>2. A render function</strong> that walks this element tree and creates real DOM nodes: <code>document.createElement</code> for element types, <code>document.createTextNode</code> for strings/numbers, setting props as attributes/listeners, and recursively rendering children into the new node.</li><li><strong>3. A minimal state mechanism</strong>: a simple module-level array of state slots plus an index cursor to fake <code>useState</code> &mdash; each call to your fake <code>useState</code> reads/writes the slot at the current index, then increments the index; a <code>render()</code>/rerender call resets the index back to 0 at the start, which is exactly why real React's Rules of Hooks (fixed call order) exist.</li><li><strong>4. A (very simplified) diffing step</strong>: instead of rebuilding the whole DOM every render, compare the new element tree to the previous one and patch only the differences &mdash; even a naive "if type changed, replace the node; if props changed, update just those attributes" version demonstrates you understand the core reconciliation idea, without needing to replicate React's full Fiber architecture.</li></ul>
+    <pre class="code-block"><code>let hookIndex = 0;
+const hookStates = [];
+
+function useState(initial) {
+  const i = hookIndex;
+  hookStates[i] = hookStates[i] ?? initial;
+  function setState(next) {
+    hookStates[i] = next;
+    rerender(); // triggers re-render, hookIndex resets to 0 first
+  }
+  hookIndex++;
+  return [hookStates[i], setState];
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> You're not expected to reproduce real React's Fiber scheduler — interviewers are checking that you can explain WHY the Rules of Hooks exist (fixed call order = fixed slot index) by building the simplest version that proves it.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: FINAL BOSS: How would you build a tiny custom React-like renderer from scratch?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+  </div>
+
+  <div class="foot">
+    <span>Interview Hub &bull; React Series</span>
+    <span>Progress saves automatically in this browser</span>
+  </div>
+
+  <div class="footnav">
+    <a class="prev" href="react-advanced-architecture-react19.html"><span class="nav-label">&larr; Previous</span>Advanced Architecture & React 19</a>
+    <span class="nav-spacer"></span>
+  </div>
+</main>
+
+<script>
+const STORAGE_KEY = 'react-testing-performance-troubleshooting-progress';
+
+function loadProgress(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function saveProgress(p){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch(e){}
+}
+
+function updateProgressBar(){
+  const p = loadProgress();
+  const total = document.querySelectorAll('.qcard').length;
+  const done = Object.values(p).filter(Boolean).length;
+  document.getElementById('progressCount').textContent = done;
+  document.getElementById('progressFill').style.width = (total ? (done/total*100) : 0) + '%';
+}
+
+function toggleCard(i){
+  const card = document.getElementById('q'+i);
+  const isOpen = card.classList.toggle('open');
+  card.querySelector('.qhead').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function toggleGotIt(i){
+  const chk = document.getElementById('chk'+i);
+  const card = document.getElementById('q'+i);
+  const p = loadProgress();
+  p[i] = chk.checked;
+  saveProgress(p);
+  card.classList.toggle('done', chk.checked);
+  updateProgressBar();
+}
+
+function expandAll(){
+  document.querySelectorAll('.qcard').forEach(c => {
+    c.classList.add('open');
+    c.querySelector('.qhead').setAttribute('aria-expanded','true');
+  });
+}
+function collapseAll(){
+  document.querySelectorAll('.qcard').forEach(c => {
+    c.classList.remove('open');
+    c.querySelector('.qhead').setAttribute('aria-expanded','false');
+  });
+}
+function selectAll(){
+  const p = loadProgress();
+  document.querySelectorAll('.qcard').forEach(card => {
+    const i = card.id.replace('q','');
+    const chk = document.getElementById('chk'+i);
+    if(chk){ chk.checked = true; }
+    card.classList.add('done');
+    p[i] = true;
+  });
+  saveProgress(p);
+  updateProgressBar();
+}
+function resetProgress(){
+  if(!confirm('Clear all learned checkmarks on this page?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.querySelectorAll('.got-it').forEach(chk => chk.checked = false);
+  document.querySelectorAll('.qcard').forEach(c => c.classList.remove('done'));
+  updateProgressBar();
+}
+
+function highlightCode(){
+  document.querySelectorAll('.code-block code').forEach(block => {
+    let text = block.textContent;
+    text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // comments
+    text = text.replace(/(\/\/[^\n]*)/g, '§COM§$1§/COM§');
+    // strings
+    text = text.replace(/('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)/g, '§STR§$1§/STR§');
+    const keywords = ['const','let','var','function','return','if','else','for','while','new','class','extends','import','export','from','default','async','await','true','false','null','undefined','typeof','of','in','this','try','catch','finally','throw'];
+    const kwPattern = new RegExp('\\b(' + keywords.join('|') + ')\\b','g');
+    text = text.replace(kwPattern, '§KW§$1§/KW§');
+    // restore + wrap markers (order matters: comments/strings already grabbed whole spans, so nested markers inside are fine as plain text)
+    text = text
+      .replace(/§COM§/g,'<span class="tok-com">').replace(/§\/COM§/g,'</span>')
+      .replace(/§STR§/g,'<span class="tok-str">').replace(/§\/STR§/g,'</span>')
+      .replace(/§KW§/g,'<span class="tok-kw">').replace(/§\/KW§/g,'</span>');
+    block.innerHTML = text;
+  });
+}
+
+highlightCode();
+(function(){
+  const p = loadProgress();
+  Object.keys(p).forEach(i => {
+    if(p[i]){
+      const chk = document.getElementById('chk'+i);
+      const card = document.getElementById('q'+i);
+      if(chk){ chk.checked = true; }
+      if(card){ card.classList.add('done'); }
+    }
+  });
+  updateProgressBar();
+})();
+
+// Fallback if this page is embedded outside the chat and sendPrompt isn't defined
+if (typeof sendPrompt === 'undefined') {
+  window.sendPrompt = function(text){
+    navigator.clipboard && navigator.clipboard.writeText(text);
+    alert('Copied prompt to clipboard:\n\n' + text);
+  };
+}
+</script>
+</body>
+</html>

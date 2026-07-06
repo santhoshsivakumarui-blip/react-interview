@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="React interview prep — Core Fundamentals, explained so clearly a child could follow, with code, analogies, and interview tips.">
+<title>React Core Fundamentals | Interview Hub</title>
+<style>
+:root{
+  --bg:#0B0E14;
+  --bg-panel:#101623;
+  --bg-panel-2:#151d2c;
+  --line:#232B3A;
+  --text:#E8E6E1;
+  --text-dim:#8B93A7;
+  --text-faint:#4E5A70;
+  --cyan:#61DAFB;
+  --orange:#FF9900;
+  --green:#3DDC97;
+  --red:#FF6B6B;
+  --mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans:'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  line-height:1.6;
+  overflow-x:hidden;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+}
+.wrap{max-width:880px; margin:0 auto; padding:0 24px 80px;}
+
+/* ── background atom-orbit ambient (React logo motif, subtle) ── */
+.orbit-bg{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; opacity:0.35;}
+.orbit-bg svg{position:absolute; top:-10%; right:-15%; width:640px; height:640px;}
+.orbit-ring{fill:none; stroke:var(--cyan); stroke-width:1; opacity:0.25; transform-origin:center;}
+.orbit-ring.r2{stroke:var(--cyan); transform:rotate(60deg);}
+.orbit-ring.r3{stroke:var(--cyan); transform:rotate(120deg);}
+.orbit-dot{fill:var(--cyan); opacity:0.6;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.orbit-ring{animation:spin 40s linear infinite;}
+.orbit-ring.r2{animation:spin 55s linear infinite reverse;}
+.orbit-ring.r3{animation:spin 70s linear infinite;}
+
+main{position:relative; z-index:1;}
+
+/* ── hero ── */
+.hero-intro{padding:64px 0 26px; border-bottom:1px solid var(--line); margin-bottom:20px;}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--cyan); margin-bottom:14px; display:flex; align-items:center; gap:8px;}
+.eyebrow::before{content:''; width:8px; height:8px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); display:inline-block;}
+.page-title{font-family:var(--mono); font-size:clamp(26px,4.4vw,40px); line-height:1.15; margin:0 0 10px; color:var(--text);}
+.page-subhead{font-size:15px; color:var(--text-dim); max-width:640px; margin:0 0 22px;}
+
+/* ── progress ── */
+.progress-shell{display:flex; align-items:center; gap:14px; background:var(--bg-panel); border:1px solid var(--line); border-radius:999px; padding:10px 16px;}
+.progress-track{flex:1; height:8px; background:var(--bg-panel-2); border-radius:999px; overflow:hidden;}
+.progress-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--cyan), var(--green)); border-radius:999px; transition:width 0.4s cubic-bezier(.4,0,.2,1);}
+.progress-label{font-family:var(--mono); font-size:12.5px; color:var(--text-dim); white-space:nowrap;}
+.progress-label strong{color:var(--cyan);}
+
+/* ── phase nav pills ── */
+.phase-nav{display:flex; gap:8px; flex-wrap:wrap; margin:22px 0 8px;}
+.phase-pill{font-family:var(--mono); font-size:12px; padding:7px 14px; border-radius:999px; border:1px solid var(--line); color:var(--text-dim); text-decoration:none; transition:border-color .2s, color .2s;}
+.phase-pill.current{color:var(--bg); background:var(--cyan); border-color:var(--cyan); font-weight:600;}
+.phase-pill.locked{opacity:0.45; cursor:default;}
+.phase-pill:not(.current):not(.locked):hover{border-color:var(--cyan); color:var(--cyan);}
+
+/* ── question cards ── */
+.qlist{position:relative; margin-top:28px; padding-left:26px;}
+.qlist::before{content:''; position:absolute; left:9px; top:6px; bottom:6px; width:2px; background:linear-gradient(var(--line), var(--line));}
+.qcard{position:relative; margin-bottom:14px; background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; transition:border-color .2s;}
+.qcard::before{content:''; position:absolute; left:-26px; top:22px; width:10px; height:10px; border-radius:50%; background:var(--bg-panel-2); border:2px solid var(--text-faint); transition:background .25s, border-color .25s, box-shadow .25s;}
+.qcard.done::before{background:var(--green); border-color:var(--green); box-shadow:0 0 10px rgba(61,220,151,0.6);}
+.qcard.open{border-color:rgba(97,218,251,0.4);}
+
+.qhead{width:100%; display:flex; align-items:center; gap:14px; padding:16px 18px; background:none; border:none; cursor:pointer; text-align:left; color:var(--text); font-family:inherit;}
+.qnum{font-family:var(--mono); font-size:12px; color:var(--cyan); background:rgba(97,218,251,0.1); border:1px solid rgba(97,218,251,0.3); border-radius:6px; padding:3px 7px; flex-shrink:0;}
+.qtext{flex:1; font-size:14.5px; font-weight:600; line-height:1.45;}
+.qright{display:flex; align-items:center; gap:12px; flex-shrink:0;}
+.got-it{width:17px; height:17px; accent-color:var(--green); cursor:pointer;}
+.chev{color:var(--text-faint); font-size:13px; transition:transform .25s ease; display:inline-block;}
+.qcard.open .chev{transform:rotate(180deg); color:var(--cyan);}
+
+.qbody{display:none; padding:0 20px 20px 20px; animation:fadeIn .25s cubic-bezier(.4,0,.2,1);}
+.qcard.open .qbody{display:block;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);}}
+
+.kid-box{background:rgba(255,153,0,0.08); border:1px solid rgba(255,153,0,0.28); border-radius:10px; padding:12px 16px; margin-bottom:14px;}
+.kid-label{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--orange); font-weight:700;}
+.kid-box p{margin:6px 0 0; font-size:13.5px; color:var(--text); line-height:1.6;}
+
+.answer-list{margin:0 0 14px; padding-left:20px; display:flex; flex-direction:column; gap:8px;}
+.answer-list li{font-size:13.5px; color:var(--text-dim); line-height:1.6;}
+.answer-list li strong{color:var(--text); font-weight:600;}
+.answer-list li code{background:var(--bg-panel-2); color:var(--cyan); padding:1px 6px; border-radius:4px; font-family:var(--mono); font-size:12.5px;}
+
+.code-block{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin:0 0 14px; font-family:var(--mono); font-size:12.5px; line-height:1.65; overflow-x:auto; white-space:pre;}
+.code-block code{color:var(--text);}
+.tok-kw{color:var(--cyan); font-weight:600;}
+.tok-str{color:var(--green);}
+.tok-com{color:var(--text-faint); font-style:italic;}
+.tok-fn{color:var(--orange);}
+
+.tip-box{background:rgba(97,218,251,0.08); border:1px solid rgba(97,218,251,0.25); border-radius:10px; padding:13px 16px; font-size:13px; color:var(--text); line-height:1.6; margin-bottom:6px;}
+.tip-box strong{color:var(--cyan);}
+
+.ask-btn{display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:9px 14px; border:1px solid var(--line); border-radius:999px; background:var(--bg-panel); color:var(--text-dim); font-family:var(--mono); font-size:12px; cursor:pointer; transition:border-color .2s, color .2s;}
+.ask-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+
+/* ── footer ── */
+.foot{margin-top:48px; padding-top:22px; border-top:1px solid var(--line); font-size:12px; color:var(--text-faint); font-family:var(--mono); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+.footnav{display:flex; justify-content:space-between; gap:12px; margin-top:16px;}
+.footnav a{flex:1; display:block; text-decoration:none; color:var(--text); background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:14px 18px; font-family:var(--mono); font-size:13px; transition:border-color .2s;}
+.footnav a:hover{border-color:var(--cyan);}
+.footnav a.next{text-align:right;}
+.footnav .nav-label{display:block; font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;}
+.footnav .nav-spacer{flex:1;}
+
+/* ── controls row ── */
+.controls{display:flex; gap:10px; margin:18px 0 4px; flex-wrap:wrap;}
+.ctrl-btn{font-family:var(--mono); font-size:12px; padding:8px 14px; border-radius:999px; border:1px solid var(--line); background:var(--bg-panel); color:var(--text-dim); cursor:pointer; transition:border-color .2s, color .2s;}
+.ctrl-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+
+@media (max-width:560px){
+  .qtext{font-size:13.5px;}
+  .hero-intro{padding:44px 0 20px;}
+}
+</style>
+</head>
+<body>
+<div class="orbit-bg">
+  <svg viewBox="0 0 640 640" aria-hidden="true">
+    <ellipse class="orbit-ring" cx="320" cy="320" rx="260" ry="100"></ellipse>
+    <ellipse class="orbit-ring r2" cx="320" cy="320" rx="260" ry="100"></ellipse>
+    <ellipse class="orbit-ring r3" cx="320" cy="320" rx="260" ry="100"></ellipse>
+    <circle class="orbit-dot" cx="320" cy="320" r="10"></circle>
+  </svg>
+</div>
+
+<main class="wrap">
+  <header class="hero-intro">
+    <div class="eyebrow">react interview prep &bull; phase 1 of 5</div>
+    <h1 class="page-title">Core Fundamentals</h1>
+    <p class="page-subhead">The first 20 React interview questions, answered so clearly a child could follow — then backed with the real technical depth an interviewer expects.</p>
+
+    <div class="progress-shell">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label"><strong id="progressCount">0</strong>/20 learned</div>
+    </div>
+
+    <div class="phase-nav">
+      <span class="phase-pill current">01 Core Fundamentals</span>
+      <a class="phase-pill" href="react-hooks-deep-dive.html">02 Hooks Deep-Dive</a>
+      <a class="phase-pill" href="react-state-management-data.html">03 State Management & Data</a>
+      <a class="phase-pill" href="react-advanced-architecture-react19.html">04 Advanced Architecture & React 19</a>
+      <a class="phase-pill" href="react-testing-performance-troubleshooting.html">05 Testing, Performance & Troubleshooting</a>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn" onclick="expandAll()">Expand all</button>
+      <button class="ctrl-btn" onclick="collapseAll()">Collapse all</button>
+      <button class="ctrl-btn" onclick="selectAll()">Select all</button>
+      <button class="ctrl-btn" onclick="resetProgress()">Reset progress</button>
+    </div>
+  </header>
+
+  <div class="qlist" id="qlist">
+    
+<article class="qcard" id="q1">
+  <button class="qhead" onclick="toggleCard(1)" aria-expanded="false" aria-controls="body1">
+    <span class="qnum">01</span>
+    <span class="qtext">What is React and how does it differ from &quot;Vanilla JS&quot;?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk1" onclick="event.stopPropagation(); toggleGotIt(1)" aria-label="Mark question 1 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body1">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Imagine building with LEGO instead of carving a toy out of a single block of wood. Vanilla JS makes you carve and re-carve the whole toy every time something changes. React gives you LEGO pieces (components) you snap together, and it only rebuilds the exact piece that changed.</p></div>
+    <ul class="answer-list"><li>React is a JavaScript <strong>library</strong> (not a framework) for building user interfaces, created by Meta.</li><li>It lets you describe the UI <strong>declaratively</strong>: you say what the UI should look like for a given state, and React figures out how to update the actual screen.</li><li>Vanilla JS is <strong>imperative</strong>: you manually find DOM elements (<code>document.querySelector</code>) and mutate them step-by-step every time data changes.</li><li>React introduces the component model, JSX, and the Virtual DOM to make UI updates predictable and reusable instead of a tangle of manual DOM edits.</li></ul>
+    <pre class="code-block"><code>// Vanilla JS — you do all the work
+const btn = document.querySelector(&#x27;#btn&#x27;);
+let count = 0;
+btn.addEventListener(&#x27;click&#x27;, () =&gt; {
+  count++;
+  document.querySelector(&#x27;#count&#x27;).textContent = count;
+});
+
+// React — you just describe the UI for any given count
+function Counter() {
+  const [count, setCount] = useState(0);
+  return &lt;button onClick={() =&gt; setCount(count + 1)}&gt;{count}&lt;/button&gt;;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Interviewers want to hear "declarative vs imperative" and "library vs framework" — React only handles the view layer, unlike Angular which is a full framework.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is React and how does it differ from &quot;Vanilla JS&quot;?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q2">
+  <button class="qhead" onclick="toggleCard(2)" aria-expanded="false" aria-controls="body2">
+    <span class="qnum">02</span>
+    <span class="qtext">What is the Virtual DOM, and how does the reconciliation process work?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk2" onclick="event.stopPropagation(); toggleGotIt(2)" aria-label="Mark question 2 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body2">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Before painting your whole room, you'd sketch it on paper first, compare the sketch to how the room looks now, and only repaint the walls that actually changed color. The Virtual DOM is React's sketch paper.</p></div>
+    <ul class="answer-list"><li>The Virtual DOM (VDOM) is a lightweight JavaScript object tree that mirrors the real DOM structure.</li><li>When state changes, React builds a <strong>new</strong> Virtual DOM tree describing the next UI.</li><li><strong>Reconciliation</strong> is the diffing algorithm that compares the new tree against the previous one to find the minimal set of real DOM changes needed.</li><li>React uses heuristics (the "Fiber" architecture) like comparing elements by type and position, and uses <code>key</code> props to track list items, to make this diff close to O(n) instead of a costly O(n³) full tree comparison.</li><li>Only the actual differences are applied to the real DOM via the renderer (react-dom), which is why React avoids expensive full re-paints.</li></ul>
+    
+    <div class="tip-box"><strong>Interview tip:</strong> Mention "Fiber" by name — it's the reconciler engine since React 16 that made rendering interruptible and enabled features like Concurrent Mode.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is the Virtual DOM, and how does the reconciliation process work?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q3">
+  <button class="qhead" onclick="toggleCard(3)" aria-expanded="false" aria-controls="body3">
+    <span class="qnum">03</span>
+    <span class="qtext">Explain the difference between element and component.</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk3" onclick="event.stopPropagation(); toggleGotIt(3)" aria-label="Mark question 3 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body3">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>A component is the cookie cutter. An element is one cookie stamped out by that cutter — a plain description of what should appear, not the cookie itself yet.</p></div>
+    <ul class="answer-list"><li>A <strong>React element</strong> is a plain, immutable JavaScript object describing a piece of UI — created by <code>React.createElement(type, props, children)</code> or JSX, which compiles to that call.</li><li>A <strong>component</strong> is a function (or class) that <em>returns</em> elements. It's the reusable blueprint/template.</li><li>You call a component (React calls it internally when it appears in JSX) to produce elements; elements themselves are just data, not something you can call methods on.</li><li>Because elements are plain objects, React can cheaply create, compare, and throw them away every render — that's part of what makes the Virtual DOM fast.</li></ul>
+    <pre class="code-block"><code>// This JSX...
+const element = &lt;Greeting name=&quot;Ana&quot; /&gt;;
+
+// ...compiles roughly to this element object:
+const element2 = React.createElement(Greeting, { name: &#x27;Ana&#x27; });
+
+// Greeting is the COMPONENT (the function)
+function Greeting({ name }) {
+  return &lt;h1&gt;Hello, {name}&lt;/h1&gt;; // this returned value is also an ELEMENT
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> A crisp one-liner interviewers love: "An element is a description of a component instance; a component is the function that produces elements."</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: Explain the difference between element and component.')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q4">
+  <button class="qhead" onclick="toggleCard(4)" aria-expanded="false" aria-controls="body4">
+    <span class="qnum">04</span>
+    <span class="qtext">What are Props, and are they mutable?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk4" onclick="event.stopPropagation(); toggleGotIt(4)" aria-label="Mark question 4 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body4">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Props are like the instructions printed on a birthday card someone hands you — you can read them, but you're not allowed to scribble over what the sender wrote.</p></div>
+    <ul class="answer-list"><li>Props (short for "properties") are the inputs passed from a parent component to a child, similar to function arguments.</li><li>Props are <strong>read-only / immutable</strong> from the receiving component's perspective — a component must never modify its own props.</li><li>Data flows one way: parent → child. If a child needs to change something, the parent passes down a callback function as a prop, and the child calls that function instead of mutating props directly.</li><li>This one-way flow (unidirectional data flow) is what keeps React apps predictable and easy to debug.</li></ul>
+    <pre class="code-block"><code>function Child({ label, onIncrement }) {
+  // label = 5;  ❌ NEVER mutate props
+  return &lt;button onClick={onIncrement}&gt;{label}&lt;/button&gt;;
+}
+
+function Parent() {
+  const [count, setCount] = useState(0);
+  return &lt;Child label={count} onIncrement={() =&gt; setCount(c =&gt; c + 1)} /&gt;;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> If asked "can you make props mutable?" — technically JS objects are mutable, but doing so breaks React's rendering guarantees and is considered undefined behavior. Always say no.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What are Props, and are they mutable?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q5">
+  <button class="qhead" onclick="toggleCard(5)" aria-expanded="false" aria-controls="body5">
+    <span class="qnum">05</span>
+    <span class="qtext">How do you implement Conditional Rendering?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk5" onclick="event.stopPropagation(); toggleGotIt(5)" aria-label="Mark question 5 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body5">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>It's like a bouncer at a door: if your name's on the list, you get shown one card; if not, a different card (or no card at all).</p></div>
+    <ul class="answer-list"><li><strong>if/else</strong> statements before the return, when logic is complex — return different JSX from early returns.</li><li><strong>Ternary operator</strong> <code>condition ? A : B</code> for inline either/or rendering.</li><li><strong>Logical AND</strong> <code>condition && <Component /></code> to render something only when true (careful with falsy numbers like <code>0</code> rendering as "0").</li><li><strong>Switch statements</strong> or lookup objects when there are many possible states/variants.</li><li>Returning <code>null</code> from a component renders nothing at all.</li></ul>
+    <pre class="code-block"><code>function Status({ isLoggedIn, isLoading }) {
+  if (isLoading) return &lt;Spinner /&gt;;
+
+  return (
+    &lt;div&gt;
+      {isLoggedIn ? &lt;Dashboard /&gt; : &lt;LoginForm /&gt;}
+      {isLoggedIn &amp;&amp; &lt;LogoutButton /&gt;}
+    &lt;/div&gt;
+  );
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Watch out for the classic bug: <code>{count && <Badge/>}</code> renders a literal "0" on screen when count is 0. Use <code>{count > 0 && <Badge/>}</code> instead.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you implement Conditional Rendering?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q6">
+  <button class="qhead" onclick="toggleCard(6)" aria-expanded="false" aria-controls="body6">
+    <span class="qnum">06</span>
+    <span class="qtext">What is the significance of Keys in lists?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk6" onclick="event.stopPropagation(); toggleGotIt(6)" aria-label="Mark question 6 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body6">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Keys are like name tags at a party. Without them, if two guests swap seats, React thinks two brand-new people walked in instead of recognizing the same two people just moved.</p></div>
+    <ul class="answer-list"><li><code>key</code> is a special prop that helps React's reconciliation identify which items in a list have changed, been added, or removed between renders.</li><li>Keys must be <strong>stable, unique among siblings, and predictable</strong> — ideally a database ID, not the array index.</li><li>Using the array <strong>index as a key is risky</strong> when the list can be reordered, filtered, or items inserted/removed — React can mismatch component state to the wrong item, causing bugs like inputs showing the wrong value.</li><li>Without keys (or with bad keys), React falls back to less efficient tree-diffing and may unnecessarily re-mount components, losing internal state and hurting performance.</li></ul>
+    <pre class="code-block"><code>// ❌ Risky if the list can reorder
+todos.map((todo, i) =&gt; &lt;TodoItem key={i} {...todo} /&gt;)
+
+// ✅ Stable identity
+todos.map(todo =&gt; &lt;TodoItem key={todo.id} {...todo} /&gt;)</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Say explicitly: "index as key is only safe when the list is static — never reordered, filtered, or has items inserted in the middle."</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is the significance of Keys in lists?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q7">
+  <button class="qhead" onclick="toggleCard(7)" aria-expanded="false" aria-controls="body7">
+    <span class="qnum">07</span>
+    <span class="qtext">Explain the difference between Functional Components and Class Components.</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk7" onclick="event.stopPropagation(); toggleGotIt(7)" aria-label="Mark question 7 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body7">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>A class component is like an old-school kitchen with dozens of buttons and this.knobs everywhere. A function component is a modern kitchen where you just say what you want and Hooks quietly do the wiring.</p></div>
+    <ul class="answer-list"><li><strong>Class components</strong> extend <code>React.Component</code>, use <code>this.state</code>, <code>this.setState()</code>, and lifecycle methods (<code>componentDidMount</code>, etc.).</li><li><strong>Function components</strong> are plain JS functions that return JSX, and use <strong>Hooks</strong> (<code>useState</code>, <code>useEffect</code>, etc.) for state and side effects instead of lifecycle methods and <code>this</code>.</li><li>Function components avoid the confusing behavior of JS's <code>this</code> binding entirely.</li><li>Since React 16.8 (Hooks), function components can do everything class components can — the React team recommends function components for all new code; classes are legacy but still supported.</li></ul>
+    <pre class="code-block"><code>// Class
+class Counter extends React.Component {
+  state = { count: 0 };
+  render() {
+    return &lt;button onClick={() =&gt; this.setState({ count: this.state.count + 1 })}&gt;
+      {this.state.count}
+    &lt;/button&gt;;
+  }
+}
+
+// Function + Hooks
+function Counter() {
+  const [count, setCount] = useState(0);
+  return &lt;button onClick={() =&gt; setCount(count + 1)}&gt;{count}&lt;/button&gt;;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> If asked which to use today: function components + Hooks, always — classes are only seen in legacy codebases now.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: Explain the difference between Functional Components and Class Components.')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q8">
+  <button class="qhead" onclick="toggleCard(8)" aria-expanded="false" aria-controls="body8">
+    <span class="qnum">08</span>
+    <span class="qtext">What is JSX, and does the browser understand it natively?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk8" onclick="event.stopPropagation(); toggleGotIt(8)" aria-label="Mark question 8 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body8">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>JSX is like writing a recipe in your own shorthand notes. The kitchen (the browser) doesn't understand your shorthand — a translator (Babel) rewrites it into plain instructions first.</p></div>
+    <ul class="answer-list"><li>JSX (JavaScript XML) is a syntax extension that lets you write HTML-like markup directly inside JavaScript.</li><li>Browsers <strong>cannot</strong> execute JSX directly — it isn't valid JavaScript.</li><li>A compiler/transpiler (usually <strong>Babel</strong>, or the bundler's built-in transform in tools like Vite) converts JSX into plain <code>React.createElement()</code> (or the newer automatic JSX runtime's <code>jsx()</code>) calls before the code ever reaches the browser.</li><li>JSX is optional — you could write raw <code>createElement</code> calls — but JSX is far more readable and is the de-facto standard.</li></ul>
+    <pre class="code-block"><code>// You write:
+const el = &lt;h1 className=&quot;title&quot;&gt;Hi&lt;/h1&gt;;
+
+// Babel compiles it to:
+const el2 = React.createElement(&#x27;h1&#x27;, { className: &#x27;title&#x27; }, &#x27;Hi&#x27;);</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Good follow-up point: since React 17's new JSX transform, you no longer need to `import React` in every file just to use JSX.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is JSX, and does the browser understand it natively?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q9">
+  <button class="qhead" onclick="toggleCard(9)" aria-expanded="false" aria-controls="body9">
+    <span class="qnum">09</span>
+    <span class="qtext">How do you handle Events in React (Synthetic Events)?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk9" onclick="event.stopPropagation(); toggleGotIt(9)" aria-label="Mark question 9 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body9">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Instead of every browser speaking its own dialect of "click," React hires one translator (SyntheticEvent) who speaks the same language everywhere, so your code doesn't have to worry which browser it's running in.</p></div>
+    <ul class="answer-list"><li>React wraps native browser events in a cross-browser wrapper called a <strong>SyntheticEvent</strong>, giving a consistent API (<code>e.target</code>, <code>e.preventDefault()</code>, etc.) across all browsers.</li><li>You attach handlers using camelCase JSX props like <code>onClick</code>, <code>onChange</code>, <code>onSubmit</code> — passing a function reference, not a string.</li><li>Historically React attached one listener at the document root and used event delegation for performance; since React 17 it delegates to the root DOM container the app is mounted in instead of <code>document</code>.</li><li>Synthetic events are pooled/reused in older React versions for performance (this was removed in React 17+, so accessing the event asynchronously is now safe without calling <code>e.persist()</code>).</li></ul>
+    <pre class="code-block"><code>function Form() {
+  function handleSubmit(e) {
+    e.preventDefault();
+    console.log(&#x27;submitted&#x27;);
+  }
+  return &lt;form onSubmit={handleSubmit}&gt;&lt;button&gt;Send&lt;/button&gt;&lt;/form&gt;;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Mention event delegation and that handlers are attached to the root container, not each individual DOM node — that's a performance detail interviewers like to probe.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you handle Events in React (Synthetic Events)?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q10">
+  <button class="qhead" onclick="toggleCard(10)" aria-expanded="false" aria-controls="body10">
+    <span class="qnum">10</span>
+    <span class="qtext">What is a Fragment (&lt;&gt;) and why use it over a &lt;div&gt;?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk10" onclick="event.stopPropagation(); toggleGotIt(10)" aria-label="Mark question 10 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body10">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>A Fragment is like an invisible tray that lets you carry several plates to the table without needing an extra visible tray underneath them.</p></div>
+    <ul class="answer-list"><li>A component's <code>return</code> must produce a single root node. Wrapping multiple sibling elements in an extra <code>&lt;div&gt;</code> just to satisfy that rule adds unnecessary markup to the DOM.</li><li><code>&lt;React.Fragment&gt;</code> (or the shorthand <code>&lt;&gt;&lt;/&gt;</code>) groups a list of children <strong>without adding an extra DOM node</strong>.</li><li>This avoids breaking CSS (e.g. flex/grid layouts that depend on direct children) and keeps the DOM tree cleaner and slightly lighter.</li><li>The full <code>&lt;React.Fragment key={id}&gt;</code> form is needed (not the shorthand) when you need to pass a <code>key</code>, e.g. when returning fragments from a list <code>.map()</code>.</li></ul>
+    <pre class="code-block"><code>function Row() {
+  return (
+    &lt;&gt;
+      &lt;td&gt;Name&lt;/td&gt;
+      &lt;td&gt;Age&lt;/td&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Bring up the layout-breaking scenario — e.g. a table expecting <tr><td> direct children breaks if you wrap cells in a stray <div>.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is a Fragment (&lt;&gt;) and why use it over a &lt;div&gt;?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q11">
+  <button class="qhead" onclick="toggleCard(11)" aria-expanded="false" aria-controls="body11">
+    <span class="qnum">11</span>
+    <span class="qtext">What are Controlled vs. Uncontrolled components?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk11" onclick="event.stopPropagation(); toggleGotIt(11)" aria-label="Mark question 11 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body11">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>A controlled input is a puppet where React holds every string. An uncontrolled input is a puppet that moves on its own, and you only glance at it when you need to check its position.</p></div>
+    <ul class="answer-list"><li><strong>Controlled component:</strong> the form element's value is driven entirely by React state (<code>value</code> + <code>onChange</code>). React is the single source of truth.</li><li><strong>Uncontrolled component:</strong> the DOM itself holds the value; React reads it only when needed via a <code>ref</code> (e.g. on submit), using <code>defaultValue</code> instead of <code>value</code>.</li><li>Controlled inputs give you instant validation, conditional disabling, and formatting as the user types, at the cost of a re-render per keystroke.</li><li>Uncontrolled inputs are simpler and slightly more performant for very large/simple forms, and are handy when integrating non-React code or file inputs (which can't be controlled).</li></ul>
+    <pre class="code-block"><code>// Controlled
+function ControlledInput() {
+  const [value, setValue] = useState(&#x27;&#x27;);
+  return &lt;input value={value} onChange={e =&gt; setValue(e.target.value)} /&gt;;
+}
+
+// Uncontrolled
+function UncontrolledInput() {
+  const inputRef = useRef(null);
+  const handleSubmit = () =&gt; console.log(inputRef.current.value);
+  return &lt;input ref={inputRef} defaultValue=&quot;&quot; /&gt;;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> File inputs (<input type="file">) are always uncontrolled in React because the browser doesn't allow setting their value programmatically.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What are Controlled vs. Uncontrolled components?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q12">
+  <button class="qhead" onclick="toggleCard(12)" aria-expanded="false" aria-controls="body12">
+    <span class="qnum">12</span>
+    <span class="qtext">What is Lifting State Up?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk12" onclick="event.stopPropagation(); toggleGotIt(12)" aria-label="Mark question 12 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body12">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>If two kids keep arguing over one toy, you don't give each kid their own copy — you give the toy to their shared parent, who hands it to whichever kid needs it.</p></div>
+    <ul class="answer-list"><li>When two or more sibling components need to share and stay in sync with the same piece of state, you move ("lift") that state up to their <strong>closest common ancestor</strong>.</li><li>The ancestor holds the state and passes it down as props, along with callback functions the children call to request changes.</li><li>This keeps a single source of truth instead of duplicated, potentially out-of-sync copies of the same data in multiple components.</li><li>It's the foundational pattern behind React's unidirectional data flow, and is often the first stepping stone toward reaching for Context or a state library when lifting gets too deep.</li></ul>
+    <pre class="code-block"><code>function Parent() {
+  const [temp, setTemp] = useState(20);
+  return (
+    &lt;&gt;
+      &lt;Slider temp={temp} onChange={setTemp} /&gt;
+      &lt;Display temp={temp} /&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> If lifting state pushes it up many levels and causes prop drilling, that's your cue to mention Context API or a state manager as the next step.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is Lifting State Up?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q13">
+  <button class="qhead" onclick="toggleCard(13)" aria-expanded="false" aria-controls="body13">
+    <span class="qnum">13</span>
+    <span class="qtext">Explain the Component Lifecycle in functional components.</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk13" onclick="event.stopPropagation(); toggleGotIt(13)" aria-label="Mark question 13 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body13">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Think of a plant: it gets planted (mount), it grows and you water it whenever something changes (update), and eventually it's removed from the pot (unmount). Hooks let you hook into each of these moments.</p></div>
+    <ul class="answer-list"><li>Function components don't have named lifecycle methods; instead <strong>Hooks</strong>, mainly <code>useEffect</code>, model the same three phases.</li><li><strong>Mount</strong> (like <code>componentDidMount</code>): <code>useEffect(() => {...}, [])</code> — empty dependency array, runs once after the first render.</li><li><strong>Update</strong> (like <code>componentDidUpdate</code>): <code>useEffect(() => {...}, [dep])</code> — runs whenever a listed dependency changes.</li><li><strong>Unmount</strong> (like <code>componentWillUnmount</code>): the function returned from inside <code>useEffect</code> is the cleanup, called before the component is removed (or before the effect re-runs).</li><li>Mentally it's better to think of effects as "synchronizing with an external system" rather than mapping 1:1 onto old lifecycle names.</li></ul>
+    <pre class="code-block"><code>useEffect(() =&gt; {
+  console.log(&#x27;mounted / dep changed&#x27;);
+  const id = setInterval(tick, 1000);
+
+  return () =&gt; {
+    console.log(&#x27;cleanup before unmount / before next run&#x27;);
+    clearInterval(id);
+  };
+}, [dep]);</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> React 18 Strict Mode intentionally mounts, unmounts, and remounts components in development to surface effects that don't clean up properly — good detail to mention.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: Explain the Component Lifecycle in functional components.')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q14">
+  <button class="qhead" onclick="toggleCard(14)" aria-expanded="false" aria-controls="body14">
+    <span class="qnum">14</span>
+    <span class="qtext">What is the purpose of prop-types (and why is TypeScript preferred now)?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk14" onclick="event.stopPropagation(); toggleGotIt(14)" aria-label="Mark question 14 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body14">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>prop-types is like a note on a mailbox that says "packages only, please" — but it's only checked when the mail carrier delivers (at runtime). TypeScript is like a security guard checking every package before it's even shipped.</p></div>
+    <ul class="answer-list"><li><code>prop-types</code> is a library for <strong>runtime</strong> type-checking of a component's props — it warns in the console during development if a prop has the wrong type.</li><li>It doesn't catch errors until the code actually runs, doesn't help with editor autocomplete, and adds a small runtime cost.</li><li><strong>TypeScript</strong> checks types at <strong>compile time</strong>, before the code ever runs, catching many bugs earlier and enabling rich IDE autocomplete/refactoring.</li><li>TypeScript also type-checks the rest of your app (not just props) — hooks, function returns, API responses — which is why most modern React codebases have moved to TypeScript and dropped prop-types entirely.</li></ul>
+    <pre class="code-block"><code>// prop-types (runtime, JS only)
+Greeting.propTypes = { name: PropTypes.string.isRequired };
+
+// TypeScript (compile-time)
+type Props = { name: string };
+function Greeting({ name }: Props) { return &lt;h1&gt;Hi {name}&lt;/h1&gt;; }</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Framing: prop-types = seatbelt you notice after the crash; TypeScript = the crash never happens because the car wouldn't start.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is the purpose of prop-types (and why is TypeScript preferred now)?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q15">
+  <button class="qhead" onclick="toggleCard(15)" aria-expanded="false" aria-controls="body15">
+    <span class="qnum">15</span>
+    <span class="qtext">How do you handle &quot;Prop Drilling&quot;?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk15" onclick="event.stopPropagation(); toggleGotIt(15)" aria-label="Mark question 15 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body15">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Prop drilling is like passing a note through five people in a line just to reach the sixth person — most of those five don't even care what the note says, they're just passing it along.</p></div>
+    <ul class="answer-list"><li><strong>Prop drilling</strong> is passing data through many intermediate components that don't use it themselves, just to get it to a deeply nested child.</li><li><strong>Context API</strong> (<code>createContext</code> + <code>useContext</code>) lets a deeply nested component read a value directly without every component in between declaring it as a prop.</li><li><strong>Component composition</strong> — passing components as <code>children</code> instead of data — often avoids the need for deep drilling in the first place.</li><li>For larger apps with lots of shared, frequently-changing state, a dedicated <strong>state management library</strong> (Zustand, Redux, Jotai) is often cleaner than Context, since Context re-renders every consumer on any value change unless carefully split.</li></ul>
+    <pre class="code-block"><code>const ThemeContext = createContext(&#x27;light&#x27;);
+
+function App() {
+  return (
+    &lt;ThemeContext.Provider value=&quot;dark&quot;&gt;
+      &lt;Toolbar /&gt;
+    &lt;/ThemeContext.Provider&gt;
+  );
+}
+
+function DeeplyNestedButton() {
+  const theme = useContext(ThemeContext); // no props passed through Toolbar!
+  return &lt;button className={theme}&gt;Click&lt;/button&gt;;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Good nuance: Context solves prop drilling, not necessarily performance — mention splitting contexts or memoizing consumers to avoid over-rendering.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you handle &quot;Prop Drilling&quot;?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q16">
+  <button class="qhead" onclick="toggleCard(16)" aria-expanded="false" aria-controls="body16">
+    <span class="qnum">16</span>
+    <span class="qtext">What is the difference between a Higher-Order Component (HOC) and Render Props?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk16" onclick="event.stopPropagation(); toggleGotIt(16)" aria-label="Mark question 16 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body16">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>An HOC is like gift-wrapping a toy in a fancier box before handing it over. Render Props is like handing someone the toy's instructions and letting them decide exactly how to display it.</p></div>
+    <ul class="answer-list"><li>Both are patterns for <strong>sharing reusable logic</strong> between components, from before Hooks existed.</li><li><strong>HOC:</strong> a function that takes a component and returns a new, enhanced component — <code>const Enhanced = withData(MyComponent)</code>. Can cause "wrapper hell" (many nested wrapper components) and prop-name collisions.</li><li><strong>Render Props:</strong> a component takes a function as a prop (often called <code>render</code> or passed as <code>children</code>) and calls it with internal data, letting the consumer decide what to render.</li><li>Both patterns are largely superseded by <strong>custom Hooks</strong> today, which share logic without extra component wrapping or nesting at all.</li></ul>
+    <pre class="code-block"><code>// HOC
+function withMousePosition(Component) {
+  return function Wrapped(props) {
+    const pos = useMousePosition();
+    return &lt;Component {...props} pos={pos} /&gt;;
+  };
+}
+
+// Render Props
+function MouseTracker({ render }) {
+  const pos = useMousePosition();
+  return render(pos);
+}
+&lt;MouseTracker render={pos =&gt; &lt;p&gt;{pos.x},{pos.y}&lt;/p&gt;} /&gt;
+
+// Modern equivalent: custom Hook
+function useMousePosition() { /* ... */ }</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Strong answer: "Both are legacy patterns for logic reuse; today a custom Hook does the same job with less nesting and clearer code."</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is the difference between a Higher-Order Component (HOC) and Render Props?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q17">
+  <button class="qhead" onclick="toggleCard(17)" aria-expanded="false" aria-controls="body17">
+    <span class="qnum">17</span>
+    <span class="qtext">How do you inject global styles vs. modular CSS?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk17" onclick="event.stopPropagation(); toggleGotIt(17)" aria-label="Mark question 17 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body17">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Global styles are like painting the whole house one color — everyone in every room sees it. Modular/scoped CSS is like giving each room its own paint that can't leak into the hallway.</p></div>
+    <ul class="answer-list"><li><strong>Global CSS</strong> (a plain <code>.css</code> file imported once, e.g. in the entry point) applies app-wide — good for resets, typography defaults, CSS variables/design tokens.</li><li><strong>CSS Modules</strong> (<code>Component.module.css</code>) auto-generate unique class names per file at build time, scoping styles to just that component and avoiding collisions.</li><li><strong>CSS-in-JS</strong> (styled-components, Emotion) writes styles in JS, colocated with the component, with dynamic props-based styling — at some runtime/bundle-size cost.</li><li><strong>Utility-first CSS</strong> (Tailwind) applies small, composable utility classes directly in JSX, avoiding custom CSS files almost entirely.</li><li>Modern trend: Tailwind or CSS Modules for most teams, since both avoid CSS-in-JS's runtime overhead while still keeping styles scoped/predictable.</li></ul>
+    <pre class="code-block"><code>/* Button.module.css */
+.primary { background: blue; }
+
+// Button.jsx
+import styles from &#x27;./Button.module.css&#x27;;
+function Button() { return &lt;button className={styles.primary}&gt;Go&lt;/button&gt;; }
+// compiled className is unique, e.g. &quot;Button_primary__a3F9k&quot;</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Mention CSS specificity/collision problems as the core reason scoping solutions (Modules, CSS-in-JS, Tailwind) exist at all.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you inject global styles vs. modular CSS?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q18">
+  <button class="qhead" onclick="toggleCard(18)" aria-expanded="false" aria-controls="body18">
+    <span class="qnum">18</span>
+    <span class="qtext">What is the role of StrictMode?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk18" onclick="event.stopPropagation(); toggleGotIt(18)" aria-label="Mark question 18 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body18">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>StrictMode is like a strict practice coach who makes you repeat a drill twice, on purpose, just to make sure you're not secretly cutting corners.</p></div>
+    <ul class="answer-list"><li><code>&lt;React.StrictMode&gt;</code> is a development-only wrapper that helps surface potential problems early — it adds <strong>zero</strong> extra behavior or DOM in production.</li><li>In development, it intentionally <strong>double-invokes</strong> certain functions (component function bodies, and since React 18, also mount → unmount → mount) to help detect side effects that aren't properly cleaned up.</li><li>It warns about legacy/deprecated APIs (old lifecycle methods, legacy context, findDOMNode), and helps you find state updates or effects that aren't idempotent/pure.</li><li>It does not catch every bug and has no effect on the production build's performance or behavior — it's purely a development-time safety net.</li></ul>
+    <pre class="code-block"><code>root.render(
+  &lt;React.StrictMode&gt;
+    &lt;App /&gt;
+  &lt;/React.StrictMode&gt;
+);</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> If someone complains "my useEffect runs twice!", explain it's StrictMode in dev mode doing double-invoke on purpose to catch missing cleanup — not a bug, and won't happen in production.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: What is the role of StrictMode?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q19">
+  <button class="qhead" onclick="toggleCard(19)" aria-expanded="false" aria-controls="body19">
+    <span class="qnum">19</span>
+    <span class="qtext">How do you prevent a component from rendering?</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk19" onclick="event.stopPropagation(); toggleGotIt(19)" aria-label="Mark question 19 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body19">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>Sometimes the simplest way to hide something is to just... not put it on the table at all. Returning null is React's way of saying "nothing here."</p></div>
+    <ul class="answer-list"><li>Return <code>null</code> (or <code>undefined</code>/<code>false</code>) from a component's function — React renders nothing for that component, though it's still "mounted" in the tree.</li><li>Use <strong>conditional rendering</strong> in the parent so the component isn't even referenced when not needed.</li><li><code>React.memo()</code> prevents unnecessary <em>re-renders</em> (not the initial render) when props haven't changed — different from preventing rendering entirely.</li><li>In class components, <code>shouldComponentUpdate()</code> returning <code>false</code> skips a re-render — the function-component equivalent is <code>React.memo</code> with a custom comparison function.</li></ul>
+    <pre class="code-block"><code>function WarningBanner({ show, message }) {
+  if (!show) return null; // renders nothing
+  return &lt;div className=&quot;warn&quot;&gt;{message}&lt;/div&gt;;
+}</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Distinguish clearly: returning null = "don't render this output"; React.memo = "don't re-render if props are unchanged." Interviewers often test if you conflate the two.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: How do you prevent a component from rendering?')">Dig deeper &#8599;</button>
+  </div>
+</article>
+
+<article class="qcard" id="q20">
+  <button class="qhead" onclick="toggleCard(20)" aria-expanded="false" aria-controls="body20">
+    <span class="qnum">20</span>
+    <span class="qtext">Explain Pure Components (or React.memo).</span>
+    <span class="qright">
+      <input type="checkbox" class="got-it" id="chk20" onclick="event.stopPropagation(); toggleGotIt(20)" aria-label="Mark question 20 as learned" />
+      <i class="chev" aria-hidden="true">&#9662;</i>
+    </span>
+  </button>
+  <div class="qbody" id="body20">
+    <div class="kid-box"><span class="kid-label">Like you're 5</span><p>A picky chef only recooks a dish if the ingredients actually changed. If you hand back the exact same ingredients, the chef says "nothing's different, here's the same plate as before" instead of cooking again from scratch.</p></div>
+    <ul class="answer-list"><li><code>React.memo(Component)</code> wraps a function component so React <strong>skips re-rendering</strong> it if its props are shallowly equal to the previous render's props.</li><li>The class equivalent is <code>React.PureComponent</code>, which implements a shallow-compare <code>shouldComponentUpdate</code> automatically.</li><li>"Shallow" comparison only checks one level deep (<code>===</code> per prop) — new object/array/function props created fresh on every render (e.g. <code>onClick={() => ...}</code> inline) will still be seen as "different" and defeat memoization.</li><li>That's why <code>React.memo</code> is usually paired with <code>useMemo</code> (for object/array props) and <code>useCallback</code> (for function props) in the parent, so the same reference is reused across renders.</li><li>Only worth adding where a component is expensive to render or re-renders very frequently — it adds its own comparison overhead, so it's not a free performance win everywhere.</li></ul>
+    <pre class="code-block"><code>const ExpensiveRow = React.memo(function Row({ item }) {
+  console.log(&#x27;rendering&#x27;, item.id);
+  return &lt;li&gt;{item.label}&lt;/li&gt;;
+});
+
+// Parent must also keep props stable:
+const item = useMemo(() =&gt; ({ id, label }), [id, label]);</code></pre>
+    <div class="tip-box"><strong>Interview tip:</strong> Classic gotcha to mention: wrapping a component in React.memo does nothing if its parent keeps passing brand-new inline object/function props each render.</div>
+    <button class="ask-btn" onclick="sendPrompt('Explain in more depth, with a follow-up interview question: Explain Pure Components (or React.memo).')">Dig deeper &#8599;</button>
+  </div>
+</article>
+  </div>
+
+  <div class="foot">
+    <span>Interview Hub &bull; React Series</span>
+    <span>Progress saves automatically in this browser</span>
+  </div>
+
+  <div class="footnav">
+    <span class="nav-spacer"></span>
+    <a class="next" href="react-hooks-deep-dive.html"><span class="nav-label">Next &rarr;</span>Hooks Deep-Dive</a>
+  </div>
+</main>
+
+<script>
+const STORAGE_KEY = 'react-core-fundamentals-progress';
+
+function loadProgress(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function saveProgress(p){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch(e){}
+}
+
+function updateProgressBar(){
+  const p = loadProgress();
+  const total = document.querySelectorAll('.qcard').length;
+  const done = Object.values(p).filter(Boolean).length;
+  document.getElementById('progressCount').textContent = done;
+  document.getElementById('progressFill').style.width = (total ? (done/total*100) : 0) + '%';
+}
+
+function toggleCard(i){
+  const card = document.getElementById('q'+i);
+  const isOpen = card.classList.toggle('open');
+  card.querySelector('.qhead').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function toggleGotIt(i){
+  const chk = document.getElementById('chk'+i);
+  const card = document.getElementById('q'+i);
+  const p = loadProgress();
+  p[i] = chk.checked;
+  saveProgress(p);
+  card.classList.toggle('done', chk.checked);
+  updateProgressBar();
+}
+
+function expandAll(){
+  document.querySelectorAll('.qcard').forEach(c => {
+    c.classList.add('open');
+    c.querySelector('.qhead').setAttribute('aria-expanded','true');
+  });
+}
+function collapseAll(){
+  document.querySelectorAll('.qcard').forEach(c => {
+    c.classList.remove('open');
+    c.querySelector('.qhead').setAttribute('aria-expanded','false');
+  });
+}
+function selectAll(){
+  const p = loadProgress();
+  document.querySelectorAll('.qcard').forEach(card => {
+    const i = card.id.replace('q','');
+    const chk = document.getElementById('chk'+i);
+    if(chk){ chk.checked = true; }
+    card.classList.add('done');
+    p[i] = true;
+  });
+  saveProgress(p);
+  updateProgressBar();
+}
+function resetProgress(){
+  if(!confirm('Clear all learned checkmarks on this page?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.querySelectorAll('.got-it').forEach(chk => chk.checked = false);
+  document.querySelectorAll('.qcard').forEach(c => c.classList.remove('done'));
+  updateProgressBar();
+}
+
+function highlightCode(){
+  document.querySelectorAll('.code-block code').forEach(block => {
+    let text = block.textContent;
+    text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // comments
+    text = text.replace(/(\/\/[^\n]*)/g, '§COM§$1§/COM§');
+    // strings
+    text = text.replace(/('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)/g, '§STR§$1§/STR§');
+    const keywords = ['const','let','var','function','return','if','else','for','while','new','class','extends','import','export','from','default','async','await','true','false','null','undefined','typeof','of','in','this','try','catch','finally','throw'];
+    const kwPattern = new RegExp('\\b(' + keywords.join('|') + ')\\b','g');
+    text = text.replace(kwPattern, '§KW§$1§/KW§');
+    // restore + wrap markers (order matters: comments/strings already grabbed whole spans, so nested markers inside are fine as plain text)
+    text = text
+      .replace(/§COM§/g,'<span class="tok-com">').replace(/§\/COM§/g,'</span>')
+      .replace(/§STR§/g,'<span class="tok-str">').replace(/§\/STR§/g,'</span>')
+      .replace(/§KW§/g,'<span class="tok-kw">').replace(/§\/KW§/g,'</span>');
+    block.innerHTML = text;
+  });
+}
+
+highlightCode();
+(function(){
+  const p = loadProgress();
+  Object.keys(p).forEach(i => {
+    if(p[i]){
+      const chk = document.getElementById('chk'+i);
+      const card = document.getElementById('q'+i);
+      if(chk){ chk.checked = true; }
+      if(card){ card.classList.add('done'); }
+    }
+  });
+  updateProgressBar();
+})();
+
+// Fallback if this page is embedded outside the chat and sendPrompt isn't defined
+if (typeof sendPrompt === 'undefined') {
+  window.sendPrompt = function(text){
+    navigator.clipboard && navigator.clipboard.writeText(text);
+    alert('Copied prompt to clipboard:\n\n' + text);
+  };
+}
+</script>
+</body>
+</html>
